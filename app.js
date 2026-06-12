@@ -244,6 +244,7 @@ function drawGraph(record) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
+  const drawnEdges = [];
   for (const edge of edges) {
     const from = nodes.find((node) => node.id === edge.from);
     const to = nodes.find((node) => node.id === edge.to);
@@ -251,15 +252,18 @@ function drawGraph(record) {
 
     const start = edgeBoundaryPoint(from, to);
     const end = edgeBoundaryPoint(to, from);
-    drawDirectedEdge(ctx, start, end);
+    drawnEdges.push({ start, end });
+    drawEdgeLine(ctx, start, end);
 
     ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-    const labelX = (start.x + end.x) / 2;
-    const labelY = (start.y + end.y) / 2;
-    const labelWidth = Math.max(72, ctx.measureText(edge.label).width + 18);
+    const labelPoint = pointOnEdge(start, end, 0.38);
+    const labelX = labelPoint.x;
+    const labelY = labelPoint.y;
+    const labelText = `${edge.label} ->`;
+    const labelWidth = Math.max(72, ctx.measureText(labelText).width + 18);
     roundRect(ctx, labelX - labelWidth / 2, labelY - 14, labelWidth, 28, 7, true, false);
     ctx.fillStyle = "#b0445d";
-    ctx.fillText(edge.label, labelX, labelY);
+    ctx.fillText(labelText, labelX, labelY);
   }
 
   for (const node of nodes) {
@@ -268,6 +272,15 @@ function drawGraph(record) {
     ctx.fillStyle = "#ffffff";
     wrapCanvasText(ctx, node.id, node.x, node.y, 132, 14);
   }
+
+  drawnEdges.forEach((edge) => drawArrowHead(ctx, edge.start, edge.end, 0.78));
+}
+
+function pointOnEdge(start, end, position) {
+  return {
+    x: start.x + (end.x - start.x) * position,
+    y: start.y + (end.y - start.y) * position
+  };
 }
 
 function edgeBoundaryPoint(node, toward) {
@@ -282,23 +295,26 @@ function edgeBoundaryPoint(node, toward) {
   };
 }
 
-function drawDirectedEdge(ctx, start, end) {
-  const angle = Math.atan2(end.y - start.y, end.x - start.x);
-  const arrowLength = 14;
-  const arrowAngle = Math.PI / 7;
-
-  ctx.strokeStyle = "#7f91a8";
-  ctx.fillStyle = "#7f91a8";
+function drawEdgeLine(ctx, start, end) {
+  ctx.strokeStyle = "#7a8da5";
   ctx.lineWidth = 2.5;
   ctx.beginPath();
   ctx.moveTo(start.x, start.y);
   ctx.lineTo(end.x, end.y);
   ctx.stroke();
+}
 
+function drawArrowHead(ctx, start, end, position = 1) {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  const tip = pointOnEdge(start, end, position);
+  const arrowLength = 18;
+  const arrowAngle = Math.PI / 6;
+
+  ctx.fillStyle = "#17324d";
   ctx.beginPath();
-  ctx.moveTo(end.x, end.y);
-  ctx.lineTo(end.x - arrowLength * Math.cos(angle - arrowAngle), end.y - arrowLength * Math.sin(angle - arrowAngle));
-  ctx.lineTo(end.x - arrowLength * Math.cos(angle + arrowAngle), end.y - arrowLength * Math.sin(angle + arrowAngle));
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(tip.x - arrowLength * Math.cos(angle - arrowAngle), tip.y - arrowLength * Math.sin(angle - arrowAngle));
+  ctx.lineTo(tip.x - arrowLength * Math.cos(angle + arrowAngle), tip.y - arrowLength * Math.sin(angle + arrowAngle));
   ctx.closePath();
   ctx.fill();
 }
