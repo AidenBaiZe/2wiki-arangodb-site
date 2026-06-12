@@ -248,15 +248,14 @@ function drawGraph(record) {
     const from = nodes.find((node) => node.id === edge.from);
     const to = nodes.find((node) => node.id === edge.to);
     if (!from || !to) continue;
-    ctx.strokeStyle = "#9aa6b5";
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
 
-    ctx.fillStyle = "#ffffff";
-    const labelX = (from.x + to.x) / 2;
-    const labelY = (from.y + to.y) / 2;
+    const start = edgeBoundaryPoint(from, to);
+    const end = edgeBoundaryPoint(to, from);
+    drawDirectedEdge(ctx, start, end);
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    const labelX = (start.x + end.x) / 2;
+    const labelY = (start.y + end.y) / 2;
     const labelWidth = Math.max(72, ctx.measureText(edge.label).width + 18);
     roundRect(ctx, labelX - labelWidth / 2, labelY - 14, labelWidth, 28, 7, true, false);
     ctx.fillStyle = "#b0445d";
@@ -269,6 +268,39 @@ function drawGraph(record) {
     ctx.fillStyle = "#ffffff";
     wrapCanvasText(ctx, node.id, node.x, node.y, 132, 14);
   }
+}
+
+function edgeBoundaryPoint(node, toward) {
+  const halfWidth = 74;
+  const halfHeight = 22;
+  const dx = toward.x - node.x;
+  const dy = toward.y - node.y;
+  const scale = Math.max(Math.abs(dx) / halfWidth, Math.abs(dy) / halfHeight, 1);
+  return {
+    x: node.x + dx / scale,
+    y: node.y + dy / scale
+  };
+}
+
+function drawDirectedEdge(ctx, start, end) {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  const arrowLength = 14;
+  const arrowAngle = Math.PI / 7;
+
+  ctx.strokeStyle = "#7f91a8";
+  ctx.fillStyle = "#7f91a8";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(end.x, end.y);
+  ctx.lineTo(end.x - arrowLength * Math.cos(angle - arrowAngle), end.y - arrowLength * Math.sin(angle - arrowAngle));
+  ctx.lineTo(end.x - arrowLength * Math.cos(angle + arrowAngle), end.y - arrowLength * Math.sin(angle + arrowAngle));
+  ctx.closePath();
+  ctx.fill();
 }
 
 function buildGraphNodes(record) {
