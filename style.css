@@ -40,14 +40,6 @@ input {
   border-bottom: 1px solid var(--line);
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--teal);
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 h1,
 h2,
 h3,
