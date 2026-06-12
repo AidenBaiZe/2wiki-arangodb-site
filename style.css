@@ -63,30 +63,18 @@ h3 {
   font-size: 15px;
 }
 
-.source-link,
 button {
   min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
+  padding: 0 14px;
   background: #ffffff;
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
 }
 
-.source-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0 14px;
-  white-space: nowrap;
-}
-
-button {
-  padding: 0 14px;
-}
-
-button:hover,
-.source-link:hover {
+button:hover {
   border-color: var(--teal);
 }
 
