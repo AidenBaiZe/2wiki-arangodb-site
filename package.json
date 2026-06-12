@@ -1,0 +1,14 @@
+{
+  "name": "2wiki-arangodb-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "2WikiMultihopQA + ArangoDB 多跳查询演示网站",
+  "scripts": {
+    "start": "python3 -m http.server 5173 --bind 127.0.0.1",
+    "check": "node scripts/check-data.js"
+  },
+  "dependencies": {
+    "arangojs": "^10.1.1"
+  },
+  "devDependencies": {}
+}

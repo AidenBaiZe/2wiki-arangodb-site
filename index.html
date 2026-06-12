@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2WikiMultihopQA · ArangoDB 多跳查询</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Big Data Storage Lab</p>
+        <h1>2WikiMultihopQA · ArangoDB 多跳查询</h1>
+      </div>
+      <a class="source-link" href="https://huggingface.co/datasets/xanhho/2WikiMultihopQA" target="_blank" rel="noreferrer">数据集来源</a>
+    </header>
+
+    <main class="layout">
+      <section class="panel overview">
+        <div>
+          <span class="label">数据库</span>
+          <strong>ArangoDB</strong>
+        </div>
+        <div>
+          <span class="label">文档集合</span>
+          <strong id="doc-count">0</strong>
+        </div>
+        <div>
+          <span class="label">边集合</span>
+          <strong id="edge-count">0</strong>
+        </div>
+        <div>
+          <span class="label">当前聚类</span>
+          <strong id="cluster-count">0</strong>
+        </div>
+      </section>
+
+      <section class="panel controls">
+        <div class="search-box">
+          <label for="query">检索问题、实体、答案或关系</label>
+          <input id="query" type="search" placeholder="例如：spouse、director、capital、Who..." autocomplete="off" />
+        </div>
+        <div id="filters" class="filters" aria-label="类型筛选"></div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel list-panel">
+          <div class="section-head">
+            <h2>查询样例</h2>
+            <span id="result-count">0 条</span>
+          </div>
+          <div id="question-list" class="question-list"></div>
+        </aside>
+
+        <section class="panel detail-panel">
+          <div class="section-head">
+            <h2 id="detail-title">多跳过程</h2>
+            <span id="detail-type"></span>
+          </div>
+          <p id="detail-question" class="question-text"></p>
+          <div class="answer-line">
+            <span>答案</span>
+            <strong id="detail-answer"></strong>
+          </div>
+          <ol id="hop-list" class="hop-list"></ol>
+          <div class="query-block">
+            <div class="section-head compact">
+              <h3>AQL 查询思路</h3>
+              <button id="copy-aql" type="button">复制</button>
+            </div>
+            <pre id="aql-code"></pre>
+          </div>
+        </section>
+      </section>
+
+      <section class="visual-grid">
+        <section class="panel graph-panel">
+          <div class="section-head">
+            <h2>实体关系图</h2>
+            <span>问题 · 证据 · 答案</span>
+          </div>
+          <canvas id="graph" width="900" height="460" aria-label="实体关系图"></canvas>
+        </section>
+
+        <section class="panel cluster-panel">
+          <div class="section-head">
+            <h2>简单聚类</h2>
+            <span>按关系词分组</span>
+          </div>
+          <div id="cluster-list" class="cluster-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
