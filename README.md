@@ -13,6 +13,10 @@
 - 使用 Canvas 绘制实体关系图
 - 提供 ArangoDB 导入脚本和 AQL 查询示例
 
+## 数据说明
+
+当前网页数据来自本机已经下载的 `2WikiMultihopQA/dev.json`，抽取了 80 条真实记录放在 `data/questions.json`。原始数据文件较大，没有直接放进网页仓库。
+
 ## 本地运行
 
 ```bash
@@ -56,8 +60,23 @@ python3 scripts/build_sample_from_parquet.py dev.json data/questions.json 80
 
 仓库推到 GitHub 后，在仓库设置里打开 Pages：
 
+- Source 选择 `GitHub Actions`
+
+仓库里已经放了 `.github/workflows/pages.yml`，推送 `main` 分支后会自动发布。
+
+如果不使用 Actions，也可以改成分支发布：
+
 - Source 选择 `Deploy from a branch`
 - Branch 选择 `main`
 - Folder 选择 `/root`
 
 保存后等待 Pages 构建完成即可访问网页。
+
+## 新仓库推送命令
+
+创建空的 GitHub 仓库后，在本地执行：
+
+```bash
+git remote add origin https://github.com/你的账号/你的仓库名.git
+git push -u origin main
+```

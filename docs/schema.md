@@ -21,9 +21,13 @@ FOR q IN questions
 ```
 
 ```aql
-LET start = DOCUMENT("entities/barack_obama")
+LET start = FIRST(
+  FOR e IN entities
+    FILTER e.name == @start_entity
+    RETURN e
+)
 FOR v, e, p IN 1..3 OUTBOUND start evidence_edges
-  FILTER p.edges[*].question_id ANY == "sample_002"
+  FILTER p.edges[*].question_id ANY == @question_id
   RETURN {
     path: p.vertices[*].name,
     relation: p.edges[*].relation

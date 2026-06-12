@@ -1,0 +1,45 @@
+/* 关键词检索：查问题文本和答案 */
+FOR q IN questions
+  LET keyword = CONCAT("%", LOWER(@keyword), "%")
+  FILTER LIKE(LOWER(q.question), keyword)
+     OR LIKE(LOWER(q.answer), keyword)
+  LIMIT 20
+  RETURN {
+    id: q._key,
+    type: q.type,
+    question: q.question,
+    answer: q.answer
+  }
+
+/* 多跳路径：从某个 evidence 起点实体沿证据边走 1 到 3 跳 */
+LET start = FIRST(
+  FOR e IN entities
+    FILTER e.name == @start_entity
+    RETURN e
+)
+FOR v, e, p IN 1..3 OUTBOUND start evidence_edges
+  FILTER p.edges[*].question_id ANY == @question_id
+  RETURN {
+    path: p.vertices[*].name,
+    relations: p.edges[*].relation
+  }
+
+/* 简单聚类：按 evidence 关系词统计问题规模 */
+FOR e IN evidence_edges
+  COLLECT relation = e.relation WITH COUNT INTO count
+  SORT count DESC
+  RETURN {
+    relation,
+    count
+  }
+
+/* 可视化导出：导出指定问题的节点和边 */
+FOR edge IN evidence_edges
+  FILTER edge.question_id == @question_id
+  LET source = DOCUMENT(edge._from)
+  LET target = DOCUMENT(edge._to)
+  RETURN {
+    source: source.name,
+    target: target.name,
+    relation: edge.relation
+  }
