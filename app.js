@@ -1,6 +1,8 @@
 const state = {
   records: [],
   filtered: [],
+  edges: [],
+  edgeIndex: new Map(),
   selectedId: null,
   query: "",
   type: "all"
@@ -25,9 +27,16 @@ const els = {
   graph: document.querySelector("#graph")
 };
 
+els.startEntity = document.querySelector("#start-entity");
+els.maxDepth = document.querySelector("#max-depth");
+els.runPathQuery = document.querySelector("#run-path-query");
+els.pathCount = document.querySelector("#path-count");
+els.pathResults = document.querySelector("#path-results");
+
 async function boot() {
   const res = await fetch("./data/questions.json");
   state.records = await res.json();
+  buildEdgeIndex();
   state.selectedId = state.records[0]?._id ?? null;
 
   els.query.addEventListener("input", (event) => {
@@ -45,7 +54,43 @@ async function boot() {
     }, 1200);
   });
 
+  els.startEntity.addEventListener("input", () => {
+    els.startEntity.dataset.auto = "false";
+  });
+  els.startEntity.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") runPathQuery();
+  });
+  els.runPathQuery.addEventListener("click", runPathQuery);
+  els.maxDepth.addEventListener("change", runPathQuery);
+
   render();
+  seedPathQuery();
+  runPathQuery();
+}
+
+function buildEdgeIndex() {
+  state.edges = [];
+  state.edgeIndex = new Map();
+  for (const record of state.records) {
+    for (const edge of record.evidences) {
+      const normalized = {
+        questionId: record._id,
+        question: record.question,
+        answer: record.answer,
+        type: record.type,
+        fact: edge.fact,
+        relation: edge.relation,
+        entity: edge.entity,
+        sourceKey: normalize(edge.fact),
+        targetKey: normalize(edge.entity)
+      };
+      state.edges.push(normalized);
+      if (!state.edgeIndex.has(normalized.sourceKey)) {
+        state.edgeIndex.set(normalized.sourceKey, []);
+      }
+      state.edgeIndex.get(normalized.sourceKey).push(normalized);
+    }
+  }
 }
 
 function renderFilters() {
@@ -158,6 +203,125 @@ function renderDetail() {
 
   els.aqlCode.textContent = buildAql(record);
   drawGraph(record);
+  if (record.evidences[0] && (!els.startEntity.value || els.startEntity.dataset.auto === "true")) {
+    els.startEntity.value = record.evidences[0].fact;
+    els.startEntity.dataset.auto = "true";
+    runPathQuery();
+  }
+}
+
+function seedPathQuery() {
+  const record = state.records.find((item) => item._id === state.selectedId);
+  if (record?.evidences[0]) {
+    els.startEntity.value = record.evidences[0].fact;
+    els.startEntity.dataset.auto = "true";
+  }
+}
+
+function runPathQuery() {
+  const start = els.startEntity.value.trim();
+  const maxDepth = Number(els.maxDepth.value || 2);
+  if (!start) {
+    renderPathResults([]);
+    return;
+  }
+  renderPathResults(findPaths(start, maxDepth));
+}
+
+function findPaths(start, maxDepth) {
+  const startKey = normalize(start);
+  const startEdges = state.edges.filter((edge) => edge.sourceKey.includes(startKey)).slice(0, 160);
+  const paths = [];
+
+  for (const edge of startEdges) {
+    const edgeKey = edgeIdentity(edge);
+    walkPath({
+      rootQuestionId: edge.questionId,
+      current: edge,
+      depth: 1,
+      nodes: [edge.fact, edge.entity],
+      relations: [edge.relation],
+      visited: new Set([edgeKey]),
+      paths,
+      maxDepth
+    });
+  }
+
+  return paths
+    .sort((a, b) => b.depth - a.depth || a.question.localeCompare(b.question))
+    .slice(0, 80);
+}
+
+function walkPath({ rootQuestionId, current, depth, nodes, relations, visited, paths, maxDepth }) {
+  paths.push({
+    questionId: rootQuestionId,
+    question: current.question,
+    answer: current.answer,
+    type: current.type,
+    depth,
+    nodes: [...nodes],
+    relations: [...relations]
+  });
+
+  if (depth >= maxDepth) return;
+
+  const nextEdges = state.edgeIndex.get(current.targetKey) ?? [];
+  for (const next of nextEdges) {
+    if (next.questionId !== rootQuestionId) continue;
+    const key = edgeIdentity(next);
+    if (visited.has(key)) continue;
+    const nextVisited = new Set(visited);
+    nextVisited.add(key);
+    walkPath({
+      rootQuestionId,
+      current: next,
+      depth: depth + 1,
+      nodes: [...nodes, next.entity],
+      relations: [...relations, next.relation],
+      visited: nextVisited,
+      paths,
+      maxDepth
+    });
+  }
+}
+
+function renderPathResults(paths) {
+  els.pathCount.textContent = `${paths.length} 条`;
+  els.pathResults.innerHTML = "";
+
+  if (!paths.length) {
+    els.pathResults.innerHTML = '<p class="empty">没有匹配路径。可以从左侧选择问题，或换一个 evidence 起点实体。</p>';
+    return;
+  }
+
+  for (const path of paths) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "path-card";
+    button.innerHTML = `
+      <strong>${escapeHtml(formatPath(path))}</strong>
+      <span>${escapeHtml(path.question)}</span>
+      <em>${escapeHtml(path.type)} · 答案：${escapeHtml(path.answer)}</em>
+    `;
+    button.addEventListener("click", () => {
+      state.query = "";
+      state.type = "all";
+      els.query.value = "";
+      state.selectedId = path.questionId;
+      renderFilters();
+      render();
+      document.querySelector(".detail-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    els.pathResults.appendChild(button);
+  }
+}
+
+function formatPath(path) {
+  let text = path.nodes[0] ?? "";
+  for (let index = 0; index < path.relations.length; index++) {
+    text += ` --[${path.relations[index]}]--> ${path.nodes[index + 1]}`;
+  }
+  return text;
 }
 
 function renderClusters() {
@@ -361,6 +525,14 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
 function slug(value) {
   const cleaned = value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 80);
   return cleaned || `entity_${simpleHash(value)}`;
+}
+
+function normalize(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function edgeIdentity(edge) {
+  return `${edge.questionId}|${edge.fact}|${edge.relation}|${edge.entity}`;
 }
 
 function simpleHash(value) {

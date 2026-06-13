@@ -12,8 +12,6 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 
 def parse_jsonish(value):
     if isinstance(value, str):
@@ -21,7 +19,7 @@ def parse_jsonish(value):
     return value or []
 
 
-def convert_row(row: pd.Series) -> dict:
+def convert_row(row: dict) -> dict:
     return {
         "_id": row["_id"],
         "type": row["type"],
@@ -51,9 +49,12 @@ def main() -> None:
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 80
 
     if source.suffix == ".parquet":
+        import pandas as pd
+
         df = pd.read_parquet(source).head(limit)
+        rows = [row.to_dict() for _, row in df.iterrows()]
     elif source.suffix == ".json":
-        df = pd.DataFrame(json.loads(source.read_text(encoding="utf-8"))).head(limit)
+        rows = json.loads(source.read_text(encoding="utf-8"))[:limit]
     elif source.suffix == ".jsonl":
         rows = []
         with source.open(encoding="utf-8") as handle:
@@ -64,7 +65,7 @@ def main() -> None:
         df = pd.DataFrame(rows)
     else:
         raise SystemExit(f"不支持的文件格式：{source.suffix}")
-    records = [convert_row(row) for _, row in df.iterrows()]
+    records = [convert_row(row) for row in rows]
     target.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"已写入 {len(records)} 条记录到 {target}")
 

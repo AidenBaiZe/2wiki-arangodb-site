@@ -9,18 +9,25 @@
 - 问题、实体、答案、关系词检索
 - 按题型筛选
 - 展示每条问题的多跳 evidence 路径
+- 输入起点实体，递归查询 1 到 3 跳 evidence 路径
 - 根据 evidence 关系词做简单聚类
 - 使用 Canvas 绘制实体关系图
 - 提供 ArangoDB 导入脚本和 AQL 查询示例
 
 ## 数据说明
 
-当前网页数据来自本机已经下载的 `2WikiMultihopQA/dev.json`，抽取了 80 条真实记录放在 `data/questions.json`。原始数据文件较大，没有直接放进网页仓库。
+当前网页数据来自本机已经下载的 `2WikiMultihopQA/dev.json`，抽取了 1200 条真实记录放在 `data/questions.json`。原始完整数据文件较大，没有直接放进网页仓库。
 
 ## 本地运行
 
 ```bash
 npm run start
+```
+
+也可以不用 npm，直接运行：
+
+```bash
+python3 -m http.server 5173 --bind 127.0.0.1
 ```
 
 浏览器打开：
@@ -52,8 +59,13 @@ node scripts/import_to_arangodb.js
 如果已经下载 Hugging Face 的 `dev.parquet`，或者已有原始 `dev.json`，可以重新生成网页数据：
 
 ```bash
+python3 scripts/build_sample_from_parquet.py dev.json data/questions.json 1200
+```
+
+只有读取 `.parquet` 时才需要额外安装：
+
+```bash
 python3 -m pip install pandas pyarrow
-python3 scripts/build_sample_from_parquet.py dev.json data/questions.json 80
 ```
 
 ## GitHub Pages
